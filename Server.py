@@ -68,7 +68,7 @@ def main():
     # Parse the CSV file containing the processing times for each carrier
     file = open('procssing_times_table.csv')
 
-    type(file)
+    #type(file)
 
     csvreader = csv.reader(file, delimiter=';')
 
@@ -93,9 +93,9 @@ def main():
             while True:
                 data = conn.recv(512)
                 if str(data) == "b'\\x00'":
-                    break
+                    continue
                 elif not data:
-                    break
+                    continue
                 with open("plc_data.xml", "w") as f:
                     # Remove last elements after and including "end" from the incoming string, and the first two elements - b',
                     # since we don't want them as part of the XML file
@@ -108,10 +108,12 @@ def main():
                 parser.parse('plc_data.xml')
                 rfid_data.print()
 
+                datetime = rfid_data.data[2]
                 processing_time = 0
-                keyString = processing_times_rows[0][int(rfid_data.data[1].split("STPLC_", 1)[1])]
-                stationPos = findIndex(processing_times_rows, processing_times_rows[0][int(rfid_data.data[1].split("STPLC_", 1)[1])])[1]
-                carrierPos = findIndex(processing_times_rows, processing_times_rows[int(rfid_data.data[0])][0])[0]
+                #keyString = processing_times_rows[0][int(rfid_data.data[1].split("STPLC_", 1)[1])]
+                #stationPos = findIndex(processing_times_rows, processing_times_rows[0][int(rfid_data.data[1].split("STPLC_", 1)[1])])[1]
+                #carrierPos = findIndex(processing_times_rows, processing_times_rows[int(rfid_data.data[0])][0])[0]
+
 
                 # loop through rows containing carrier IDs
                 for row in range(1, len(processing_times_rows)):
@@ -122,7 +124,10 @@ def main():
                         # as the station number sent by the plc
                         # then access the specific processing time for that case
                         if processing_times_rows[row][0].split("Carrier#", 1)[1] == rfid_data.data[0] and processing_times_rows[0][col].split("Station#", 1)[1] == rfid_data.data[1].split("STPLC_", 1)[1]:
-                            processing_time = processing_times_rows[carrierPos][stationPos]
+                            processing_time = processing_times_rows[row][col]
+                            with open('log.txt', 'a') as log:
+                                logentry = f"{datetime}   Carrier ID: {row}, Station ID: {col}, processing time: {processing_time}"
+                                log.write(logentry)
 
                 print(processing_time)
                 # conn.send(str(processing_time).encode(FORMAT))
